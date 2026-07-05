@@ -4,7 +4,11 @@ require_once 'config/db.php';
 require_once 'auth/middleware.php';
 requireAdmin();
 
-// Ambil semua ruangan
+// gedung
+$stmtGedung = $pdo->query("SELECT * FROM gedung ORDER BY kode ASC");
+$gedungs = $stmtGedung->fetchAll();
+
+// ruangan
 $stmt = $pdo->query("
     SELECT r.*, g.kode as kode_gedung, g.nama as nama_gedung 
     FROM ruangan r 
@@ -73,12 +77,17 @@ $ruangan = $stmt->fetchAll();
                 Ruangan berhasil dihapus!
             </div>
         <?php endif; ?>
+        <?php if (isset($_GET['sukses']) && $_GET['sukses'] === 'edit'): ?>
+            <div style="background: #E6F6ED; color: var(--success); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
+                Ruangan berhasil diperbarui!
+            </div>
+        <?php endif; ?>
 
         <div class="building-filter-bar">
             <button class="filter-chip active" id="filter-semua" onclick="filterRooms('semua')">Semua</button>
-            <button class="filter-chip" id="filter-a" onclick="filterRooms('a')">Gedung A</button>
-            <button class="filter-chip" id="filter-b" onclick="filterRooms('b')">Gedung B</button>
-            <button class="filter-chip" id="filter-c" onclick="filterRooms('c')">Gedung C</button>
+            <?php foreach ($gedungs as $g): ?>
+            <button class="filter-chip" id="filter-<?= strtolower($g['kode']) ?>" onclick="filterRooms('<?= strtolower($g['kode']) ?>')"><?= htmlspecialchars($g['nama']) ?></button>
+            <?php endforeach; ?>
         </div>
 
         <section class="card" id="roomList">
@@ -96,7 +105,8 @@ $ruangan = $stmt->fetchAll();
                 </div>
                 <div class="item-subtitle">Kapasitas: <?= $r['kapasitas'] ?> Orang • <?= htmlspecialchars($r['fasilitas']) ?></div>
                 <div class="item-actions">
-                    <form action="actions/hapus_ruangan.php" method="POST" onsubmit="return confirm('Yakin ingin menghapus ruangan ini?');" style="margin:0;">
+                    <button class="btn btn-outline btn-small" onclick='openEditModal(<?= json_encode($r) ?>)' style="margin-right: 0.5rem; color: var(--secondary); border-color: var(--secondary);">Edit</button>
+                    <form action="actions/hapus_ruangan.php" method="POST" onsubmit="return confirm('Yakin ingin menghapus ruangan ini?');" style="margin:0; display:inline-block;">
                         <input type="hidden" name="id" value="<?= $r['id'] ?>">
                         <button type="submit" class="btn btn-danger btn-small">Hapus</button>
                     </form>
@@ -193,6 +203,67 @@ $ruangan = $stmt->fetchAll();
             });
         }
     </script>
+
+    <!-- ===== MODAL EDIT RUANGAN ===== -->
+    <div class="modal-overlay" id="modalEdit">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalEditTitle">
+            <div class="modal-header">
+                <span class="modal-title" id="modalEditTitle">Edit Ruangan</span>
+                <button class="modal-close" onclick="closeEditModal()" aria-label="Tutup">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <form action="actions/edit_ruangan.php" method="POST">
+                <input type="hidden" id="edit_id" name="id">
+                <div class="form-group">
+                    <label for="edit_gedung">Gedung <span style="color:var(--danger)">*</span></label>
+                    <select id="edit_gedung" name="gedung" required>
+                        <?php foreach ($gedungs as $g): ?>
+                        <option value="<?= strtolower($g['kode']) ?>"><?= htmlspecialchars($g['nama']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_namaRuangan">Nama Ruangan <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="edit_namaRuangan" name="namaRuangan" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_kapasitas">Kapasitas (Orang) <span style="color:var(--danger)">*</span></label>
+                    <input type="number" id="edit_kapasitas" name="kapasitas" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Fasilitas Tersedia</label>
+                    <div class="checkbox-group" id="edit_fasilitas_group">
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="Proyektor"> Proyektor</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="AC"> AC</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="Sound System"> Sound System</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="Whiteboard"> Whiteboard</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="PC"> PC</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="LAN"> LAN</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="Smart Board"> Smart Board</label>
+                        <label class="checkbox-chip"><input type="checkbox" name="fasilitas[]" value="Panggung"> Panggung</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_statusRuangan">Status</label>
+                    <select id="edit_statusRuangan" name="statusRuangan">
+                        <option value="aktif">Aktif</option>
+                        <option value="nonaktif">Nonaktif</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModal()" style="flex:1;">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </body>
 </html>

@@ -20,6 +20,19 @@ $bookings = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SIPERKA Admin - Peminjaman</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10, 37, 64, 0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; animation: fadeIn 0.2s ease; }
+        .modal-overlay.open { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-box { background: #fff; border-radius: 28px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+        .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--text-dark); }
+        .modal-close { width: 36px; height: 36px; border-radius: 50%; background: #F3F4F6; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-light); transition: all 0.2s ease; }
+        .modal-close:hover { background: var(--danger-bg); color: var(--danger); }
+        .form-group textarea { width: 100%; padding: 0.85rem 1rem; border: 1px solid #D1D5DB; border-radius: 16px; font-size: 1rem; font-family: 'Inter', sans-serif; resize: vertical; min-height: 100px; }
+        .form-group textarea:focus { border-color: var(--secondary); outline: none; }
+    </style>
 </head>
 <body style="padding-bottom: 2rem;">
 
