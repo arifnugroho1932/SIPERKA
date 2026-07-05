@@ -55,13 +55,69 @@ $ruangan = $stmt->fetchAll();
         <h1>Admin SIPERKA</h1>
         <nav class="admin-nav">
             <a href="admin_dashboard.php" class="btn btn-outline btn-small">Dashboard</a>
-            <a href="admin_rooms.php" class="btn btn-primary btn-small">Kelola Ruangan</a>
+            <a href="admin_rooms.php" class="btn btn-primary btn-small">Gedung & Ruangan</a>
             <a href="admin_bookings.php" class="btn btn-outline btn-small">Peminjaman</a>
             <a href="auth/logout.php" class="btn btn-outline btn-small" style="color: var(--danger); border-color: var(--danger);">Logout</a>
         </nav>
     </header>
 
     <main style="padding-top: 0;">
+        <?php if (isset($_GET['error'])): ?>
+            <div style="background: var(--danger-bg); color: var(--danger); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
+                <?php
+                if ($_GET['error'] === 'empty_gedung') echo "Data gedung tidak boleh kosong!";
+                elseif ($_GET['error'] === 'kode_exists') echo "Kode gedung sudah digunakan!";
+                elseif ($_GET['error'] === 'gedung_in_use') echo "Gedung tidak dapat dihapus karena masih memiliki ruangan!";
+                else echo "Terjadi kesalahan sistem!";
+                ?>
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['sukses']) && strpos($_GET['sukses'], 'gedung') !== false): ?>
+            <div style="background: #E6F6ED; color: var(--success); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
+                Gedung berhasil <?= str_replace('_gedung', '', $_GET['sukses']) === 'tambah' ? 'ditambahkan' : (str_replace('_gedung', '', $_GET['sukses']) === 'hapus' ? 'dihapus' : 'diperbarui') ?>!
+            </div>
+        <?php endif; ?>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 class="section-title" style="margin-bottom: 0;">Daftar Gedung</h2>
+            <button class="btn btn-primary btn-small" onclick="openModalGedung()">+ Tambah Gedung</button>
+        </div>
+        
+        <section class="card" style="margin-bottom: 2rem;">
+            <?php if (empty($gedungs)): ?>
+                <p style="text-align:center; color:var(--text-light); padding:1rem;">Belum ada gedung terdaftar.</p>
+            <?php else: ?>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #F3F4F6;">
+                                <th style="padding: 0.75rem; color: var(--text-light);">Kode</th>
+                                <th style="padding: 0.75rem; color: var(--text-light);">Nama Gedung</th>
+                                <th style="padding: 0.75rem; color: var(--text-light);">Deskripsi</th>
+                                <th style="padding: 0.75rem; color: var(--text-light); width: 120px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($gedungs as $g): ?>
+                            <tr style="border-bottom: 1px solid #F3F4F6;">
+                                <td style="padding: 0.75rem; font-weight: bold;"><?= htmlspecialchars($g['kode']) ?></td>
+                                <td style="padding: 0.75rem;"><?= htmlspecialchars($g['nama']) ?></td>
+                                <td style="padding: 0.75rem; color: var(--text-light);"><?= htmlspecialchars($g['deskripsi']) ?></td>
+                                <td style="padding: 0.75rem; display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-outline btn-small" onclick='openEditModalGedung(<?= json_encode($g) ?>)' style="padding: 0.2rem 0.5rem; font-size: 0.8rem; color: var(--secondary); border-color: var(--secondary);">Edit</button>
+                                    <form action="actions/hapus_gedung.php" method="POST" onsubmit="return confirm('Yakin ingin menghapus gedung ini?');" style="margin:0;">
+                                        <input type="hidden" name="id" value="<?= $g['id'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-small" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Hapus</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2 class="section-title" style="margin-bottom: 0;">Daftar Ruangan</h2>
             <button class="btn btn-primary btn-small" onclick="openModal()">+ Tambah Ruangan</button>
@@ -131,9 +187,9 @@ $ruangan = $stmt->fetchAll();
                     <label for="gedung">Gedung <span style="color:var(--danger)">*</span></label>
                     <select id="gedung" name="gedung" required>
                         <option value="" disabled selected>— Pilih gedung —</option>
-                        <option value="a">Gedung A — Akademik</option>
-                        <option value="b">Gedung B — Serbaguna</option>
-                        <option value="c">Gedung C — Riset & Inovasi</option>
+                        <?php foreach ($gedungs as $g): ?>
+                        <option value="<?= strtolower($g['kode']) ?>"><?= htmlspecialchars($g['nama']) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
@@ -176,33 +232,6 @@ $ruangan = $stmt->fetchAll();
             </form>
         </div>
     </div>
-
-    <script>
-        function openModal() {
-            document.getElementById('modalTambah').classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeModal() {
-            document.getElementById('modalTambah').classList.remove('open');
-            document.body.style.overflow = '';
-        }
-        document.getElementById('modalTambah').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-
-        function filterRooms(building) {
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            document.getElementById('filter-' + building).classList.add('active');
-
-            document.querySelectorAll('#roomList .list-item').forEach(item => {
-                if (building === 'semua' || item.dataset.building === building) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        }
-    </script>
 
     <!-- ===== MODAL EDIT RUANGAN ===== -->
     <div class="modal-overlay" id="modalEdit">
@@ -263,7 +292,151 @@ $ruangan = $stmt->fetchAll();
                 </div>
             </form>
         </div>
+    </div>  
+
+    <!-- ===== MODAL TAMBAH GEDUNG ===== -->
+    <div class="modal-overlay" id="modalTambahGedung">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span class="modal-title">Tambah Gedung Baru</span>
+                <button class="modal-close" onclick="closeModalGedung()" aria-label="Tutup">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form action="actions/tambah_gedung.php" method="POST">
+                <div class="form-group">
+                    <label for="kodeGedung">Kode Gedung <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="kodeGedung" name="kode" placeholder="Contoh: A, B, C, FAI" required maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label for="namaGedung">Nama Gedung <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="namaGedung" name="nama" placeholder="Contoh: Gedung Kuliah Bersama 1" required>
+                </div>
+                <div class="form-group">
+                    <label for="deskripsiGedung">Deskripsi</label>
+                    <input type="text" id="deskripsiGedung" name="deskripsi" placeholder="Informasi tambahan">
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeModalGedung()" style="flex:1;">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">Simpan Gedung</button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <!-- ===== MODAL EDIT GEDUNG ===== -->
+    <div class="modal-overlay" id="modalEditGedung">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span class="modal-title">Edit Gedung</span>
+                <button class="modal-close" onclick="closeEditModalGedung()" aria-label="Tutup">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form action="actions/edit_gedung.php" method="POST">
+                <input type="hidden" id="edit_idGedung" name="id">
+                <div class="form-group">
+                    <label for="edit_kodeGedung">Kode Gedung <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="edit_kodeGedung" name="kode" required maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label for="edit_namaGedung">Nama Gedung <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="edit_namaGedung" name="nama" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_deskripsiGedung">Deskripsi</label>
+                    <input type="text" id="edit_deskripsiGedung" name="deskripsi">
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModalGedung()" style="flex:1;">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('modalTambah').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal() {
+            document.getElementById('modalTambah').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('modalTambah').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        function openEditModal(room) {
+            document.getElementById('edit_id').value = room.id;
+            document.getElementById('edit_gedung').value = room.kode_gedung.toLowerCase();
+            document.getElementById('edit_namaRuangan').value = room.nama;
+            document.getElementById('edit_kapasitas').value = room.kapasitas;
+            document.getElementById('edit_statusRuangan').value = room.status;
+
+            // Handle checkboxes
+            const fasilitasStr = room.fasilitas || "";
+            const fasilitasArr = fasilitasStr.split(',').map(f => f.trim());
+            
+            const checkboxes = document.querySelectorAll('#edit_fasilitas_group input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = fasilitasArr.includes(cb.value);
+            });
+
+            document.getElementById('modalEdit').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeEditModal() {
+            document.getElementById('modalEdit').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('modalEdit').addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        // Modal Gedung Functions
+        function openModalGedung() {
+            document.getElementById('modalTambahGedung').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModalGedung() {
+            document.getElementById('modalTambahGedung').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('modalTambahGedung').addEventListener('click', function(e) {
+            if (e.target === this) closeModalGedung();
+        });
+
+        function openEditModalGedung(gedung) {
+            document.getElementById('edit_idGedung').value = gedung.id;
+            document.getElementById('edit_kodeGedung').value = gedung.kode;
+            document.getElementById('edit_namaGedung').value = gedung.nama;
+            document.getElementById('edit_deskripsiGedung').value = gedung.deskripsi;
+            document.getElementById('modalEditGedung').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeEditModalGedung() {
+            document.getElementById('modalEditGedung').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('modalEditGedung').addEventListener('click', function(e) {
+            if (e.target === this) closeEditModalGedung();
+        });
+
+        function filterRooms(building) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            document.getElementById('filter-' + building).classList.add('active');
+
+            document.querySelectorAll('#roomList .list-item').forEach(item => {
+                if (building === 'semua' || item.dataset.building === building) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
 
 </body>
 </html>
