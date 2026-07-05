@@ -40,7 +40,7 @@ $bookings = $stmt->fetchAll();
         <h1>Admin SIPERKA</h1>
         <nav class="admin-nav">
             <a href="admin_dashboard.php" class="btn btn-outline btn-small">Dashboard</a>
-            <a href="admin_rooms.php" class="btn btn-outline btn-small">Kelola Ruangan</a>
+            <a href="admin_rooms.php" class="btn btn-outline btn-small">Gedung & Ruangan</a>
             <a href="admin_bookings.php" class="btn btn-primary btn-small">Peminjaman</a>
             <a href="auth/logout.php" class="btn btn-outline btn-small" style="color: var(--danger); border-color: var(--danger);">Logout</a>
         </nav>
@@ -89,10 +89,7 @@ $bookings = $stmt->fetchAll();
                             <input type="hidden" name="id" value="<?= $item['id'] ?>">
                             <button type="submit" class="btn btn-success btn-small">Setujui</button>
                         </form>
-                        <form action="actions/tolak_peminjaman.php" method="POST" style="margin:0;">
-                            <input type="hidden" name="id" value="<?= $item['id'] ?>">
-                            <button type="submit" class="btn btn-danger btn-small">Tolak</button>
-                        </form>
+                        <button type="button" class="btn btn-danger btn-small" onclick="openTolakModal(<?= $item['id'] ?>)">Tolak</button>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -101,8 +98,8 @@ $bookings = $stmt->fetchAll();
         </section>
     </main>
 
-     <!-- Modal Tolak Peminjaman -->
-     <div class="modal-overlay" id="modalTolak">
+    <!-- Modal Tolak Peminjaman -->
+    <div class="modal-overlay" id="modalTolak">
         <div class="modal-box" role="dialog" aria-modal="true">
             <div class="modal-header">
                 <span class="modal-title">Tolak Peminjaman</span>
