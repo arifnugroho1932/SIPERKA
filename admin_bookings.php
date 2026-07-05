@@ -88,5 +88,43 @@ $bookings = $stmt->fetchAll();
         </section>
     </main>
 
+     <!-- Modal Tolak Peminjaman -->
+     <div class="modal-overlay" id="modalTolak">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span class="modal-title">Tolak Peminjaman</span>
+                <button class="modal-close" onclick="closeTolakModal()" aria-label="Tutup">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form action="actions/tolak_peminjaman.php" method="POST">
+                <input type="hidden" name="id" id="tolak_id">
+                <div class="form-group">
+                    <label for="alasan_penolakan">Alasan Penolakan (Opsional)</label>
+                    <textarea name="alasan_penolakan" id="alasan_penolakan" placeholder="Contoh: Ruangan akan digunakan untuk ujian..."></textarea>
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeTolakModal()" style="flex:1;">Batal</button>
+                    <button type="submit" class="btn btn-danger" style="flex:2;">Konfirmasi Tolak</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openTolakModal(id) {
+            document.getElementById('tolak_id').value = id;
+            document.getElementById('modalTolak').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeTolakModal() {
+            document.getElementById('modalTolak').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('modalTolak').addEventListener('click', function(e) {
+            if (e.target === this) closeTolakModal();
+        });
+    </script>
+
 </body>
 </html>
