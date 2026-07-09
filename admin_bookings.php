@@ -41,6 +41,7 @@ $bookings = $stmt->fetchAll();
         <nav class="admin-nav">
             <a href="admin_dashboard.php" class="btn btn-outline btn-small">Dashboard</a>
             <a href="admin_rooms.php" class="btn btn-outline btn-small">Gedung & Ruangan</a>
+            <a href="admin_jadwal.php" class="btn btn-outline btn-small">Jadwal Kuliah</a>
             <a href="admin_bookings.php" class="btn btn-primary btn-small">Peminjaman</a>
             <a href="auth/logout.php" class="btn btn-outline btn-small" style="color: var(--danger); border-color: var(--danger);">Logout</a>
         </nav>
