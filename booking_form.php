@@ -17,6 +17,33 @@ $ruangan = $stmt->fetch();
 if (!$ruangan) {
     die("Ruangan tidak ditemukan atau tidak aktif.");
 }
+
+// jadwal kuliah per ruangan
+$stmtJadwal = $pdo->prepare("
+    SELECT hari, jam_mulai, jam_selesai, mata_kuliah
+    FROM jadwal_kuliah
+    WHERE ruangan_id = ?
+    ORDER BY 
+        CASE hari 
+            WHEN 'Senin'  THEN 1 
+            WHEN 'Selasa' THEN 2 
+            WHEN 'Rabu'   THEN 3 
+            WHEN 'Kamis'  THEN 4 
+            WHEN 'Jumat'  THEN 5 
+            WHEN 'Sabtu'  THEN 6 
+            WHEN 'Minggu' THEN 7 
+        END ASC,
+        jam_mulai ASC
+");
+$stmtJadwal->execute([$ruangan_id]);
+$jadwalRows = $stmtJadwal->fetchAll();
+
+// jadwal perhari
+$jadwalPerHari = [];
+foreach ($jadwalRows as $row) {
+    $jadwalPerHari[$row['hari']][] = $row;
+}
+$hariUrutan = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -72,7 +99,58 @@ if (!$ruangan) {
     </header>
 
     <main class="flex-grow w-full max-w-2xl mx-auto px-6 py-12">
-        
+
+    <!-- ===== JADWAL KULIAH ===== -->
+    <?php if (!empty($jadwalPerHari)): ?>
+        <section class="card" style="margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.25rem;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #FFF4E5; display:flex; align-items:center; justify-content:center; font-size: 1.1rem; flex-shrink:0;">📅</div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1rem; color: var(--text-dark);">Jadwal Kuliah Ruangan Ini</h3>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-light);">Pilih tanggal di form bawah untuk otomatis melihat jadwal hari tersebut</p>
+                </div>
+            </div>
+
+            <!-- Tab Hari -->
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                <?php $firstTab = true; foreach ($hariUrutan as $hari): if (!isset($jadwalPerHari[$hari])) continue; ?>
+                <button
+                    class="tab-btn"
+                    onclick="showTab('<?= $hari ?>')"
+                    id="tab-<?= $hari ?>"
+                    style="padding: 0.4rem 0.9rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease;
+                    border: 2px solid <?= $firstTab ? '#d97706' : '#E5E7EB' ?>; 
+                    background: <?= $firstTab ? '#d97706' : '#fff' ?>; 
+                    color: <?= $firstTab ? '#fff' : '#4B5563' ?>;"
+    ><?= $hari ?></button>
+                <?php $firstTab = false; endforeach; ?>
+            </div>
+
+            <!-- Konten per Hari -->
+            <?php $firstContent = true; foreach ($hariUrutan as $hari): if (!isset($jadwalPerHari[$hari])) continue; ?>
+            <div id="jadwal-content-<?= $hari ?>" class="jadwal-content" style="display: <?= $firstContent ? 'block' : 'none' ?>;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <?php foreach ($jadwalPerHari[$hari] as $j): ?>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; background: #FFF8F0; border-left: 3px solid var(--warning); border-radius: 8px;">
+                        <div style="flex-shrink:0; font-size:0.78rem; font-weight:800; color: var(--warning); white-space: nowrap;">
+                            <?= date('H:i', strtotime($j['jam_mulai'])) ?> – <?= date('H:i', strtotime($j['jam_selesai'])) ?>
+                        </div>
+                        <div style="width: 1px; height: 28px; background: #d97706; flex-shrink:0;"></div>
+                        <div style="font-size:0.875rem; color: var(--text-dark); font-weight: 500;">
+                            <?= htmlspecialchars($j['mata_kuliah']) ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php $firstContent = false; endforeach; ?>
+
+            <p style="margin-top: 1rem; margin-bottom: 0; font-size: 0.78rem; color: var(--text-light); text-align: center;">
+                Peminjaman pada waktu di atas akan otomatis ditolak sistem.
+            </p>
+        </section>
+        <?php endif; ?>
+            
         <div class="editorial-card p-6 md:p-10">
             <div class="flex items-start gap-4 mb-8 pb-6 border-b border-midnight/10">
                 <div class="w-14 h-14 bg-amber-warm border border-midnight shadow-[2px_2px_0px_#111c24] flex items-center justify-center rounded-sm shrink-0">
@@ -131,6 +209,42 @@ if (!$ruangan) {
             </form>
         </div>
     </main>
+
+    <script>
+        // Tab switching untuk jadwal kuliah
+        function showTab(hari) {
+            document.querySelectorAll('.jadwal-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.style.background    = '#fff';
+                btn.style.color         = 'var(--text-light)';
+                btn.style.borderColor   = '#E5E7EB';
+            });
+            const content = document.getElementById('jadwal-content-' + hari);
+            if (content) content.style.display = 'block';
+            const activeBtn = document.getElementById('tab-' + hari);
+            if (activeBtn) {
+                activeBtn.style.background  = '#d97706';
+                activeBtn.style.color       = '#fff';
+                activeBtn.style.borderColor = '#d97706';
+            }
+        }
+
+        // Otomatis pindah ke tab hari yang sesuai saat user memilih tanggal
+        const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        document.getElementById('tanggal').addEventListener('change', function () {
+            if (!this.value) return;
+            const parts = this.value.split('-');
+            const d     = new Date(parts[0], parts[1] - 1, parts[2]);
+            const hari  = namaHari[d.getDay()];
+            if (document.getElementById('tab-' + hari)) {
+                showTab(hari);
+                // Scroll lembut ke jadwal agar user langsung melihat
+                document.querySelector('.jadwal-content[style*="block"]')
+                    ?.closest('section')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    </script>
 
 </body>
 </html>

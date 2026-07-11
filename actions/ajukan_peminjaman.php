@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../auth/middleware.php';
+require_once '../config/mail.php';
 requireLogin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -15,26 +16,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $keterangan = trim($_POST['keterangan'] ?? '');
 
     if ($ruangan_id && $nama_kegiatan && $tanggal && $waktu_mulai && $waktu_selesai && $jumlah_peserta > 0) {
-        // Cek konflik (sederhana)
+
+        $namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        $hariPeminjaman = $namaHari[date('w', strtotime($tanggal))];
+
+        $stmtJadwal = $pdo->prepare("
+            SELECT id FROM jadwal_kuliah 
+            WHERE ruangan_id = ? AND hari = ?
+            AND (jam_mulai < ? AND jam_selesai > ?)
+        ");
+        $stmtJadwal->execute([$ruangan_id, $hariPeminjaman, $waktu_selesai, $waktu_mulai]);
+
+        if ($stmtJadwal->rowCount() > 0) {
+            header("Location: ../booking_form.php?ruangan_id=$ruangan_id&error=jadwal_kuliah");
+            exit;
+        }
+
+        //peminjaman disetujui
         $stmtCek = $pdo->prepare("
             SELECT id FROM peminjaman 
-            WHERE ruangan_id = ? AND tanggal = ? AND status != 'ditolak'
-            AND (
-                (waktu_mulai <= ? AND waktu_selesai >= ?) OR
-                (waktu_mulai <= ? AND waktu_selesai >= ?) OR
-                (? <= waktu_mulai AND ? >= waktu_selesai)
-            )
+            WHERE ruangan_id = ? AND tanggal = ? AND status = 'disetujui'
+            AND (waktu_mulai < ? AND waktu_selesai > ?)
         ");
-        $stmtCek->execute([
-            $ruangan_id, $tanggal, 
-            $waktu_mulai, $waktu_mulai, 
-            $waktu_selesai, $waktu_selesai, 
-            $waktu_mulai, $waktu_selesai
-        ]);
+        $stmtCek->execute([$ruangan_id, $tanggal, $waktu_selesai, $waktu_mulai]);
 
         if ($stmtCek->rowCount() > 0) {
             // Ada jadwal bentrok
-            header("Location: ../booking_form.php?ruangan_id=$ruangan_id&error=konflik");
+            header("Location: ../booking_form.php?ruangan_id=$ruangan_id&error=peminjaman_overlap");
             exit;
         }
 
@@ -42,6 +50,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("INSERT INTO peminjaman (user_id, ruangan_id, nama_kegiatan, tanggal, waktu_mulai, waktu_selesai, jumlah_peserta, keterangan, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
         $stmt->execute([$user_id, $ruangan_id, $nama_kegiatan, $tanggal, $waktu_mulai, $waktu_selesai, $jumlah_peserta, $keterangan]);
         
+        // Ambil data ruangan untuk email
+        $stmtRuangan = $pdo->prepare("SELECT nama FROM ruangan WHERE id = ?");
+        $stmtRuangan->execute([$ruangan_id]);
+        $ruangan_nama = $stmtRuangan->fetchColumn();
+
+        // Kirim email notifikasi ke semua admin
+        $stmtAdmin = $pdo->query("SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''");
+        $admins = $stmtAdmin->fetchAll();
+
+        $subject = "Permohonan Peminjaman Baru: $ruangan_nama";
+        $body = "Halo Admin,\n\nAda permohonan peminjaman ruangan baru yang membutuhkan persetujuan Anda.\n\n"
+              . "Ruangan: $ruangan_nama\n"
+              . "Kegiatan: $nama_kegiatan\n"
+              . "Tanggal: $tanggal\n"
+              . "Waktu: $waktu_mulai - $waktu_selesai\n"
+              . "Peminjam: " . $_SESSION['nama'] . "\n\n"
+              . "Silakan login ke SIPERKA untuk menyetujui atau menolak permohonan ini.\n\nSalam,\nSistem SIPERKA";
+
+        foreach ($admins as $admin) {
+            sendSimpleEmail($admin['email'], $subject, $body);
+        }
+
         header("Location: ../history.php?sukses=1");
         exit;
     }

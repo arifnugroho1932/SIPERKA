@@ -4,25 +4,26 @@ require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama = trim($_POST['nama'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
 
     // Validasi kosong
-    if (empty($nama) || empty($username) || empty($password) || empty($password_confirm)) {
+    if (empty($nama) || empty($email) || empty($username) || empty($password) || empty($password_confirm)) {
         header("Location: ../register.php?error=empty");
         exit;
     }
 
-    // Validasi password
+    // Validasi kecocokan password
     if ($password !== $password_confirm) {
         header("Location: ../register.php?error=mismatch");
         exit;
     }
 
-    // Cek username yang tersedia
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-    $stmt->execute([$username]);
+    // Cek ketersediaan username dan email
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+    $stmt->execute([$username, $email]);
     if ($stmt->rowCount() > 0) {
         header("Location: ../register.php?error=exists");
         exit;
@@ -30,13 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Hash password & Insert
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    $role = 'mahasiswa'; 
+    $role = 'mahasiswa'; // Default role
     
     try {
-        $stmtInsert = $pdo->prepare("INSERT INTO users (nama, username, password, role) VALUES (?, ?, ?, ?)");
-        $stmtInsert->execute([$nama, $username, $hashed_password, $role]);
+        $stmtInsert = $pdo->prepare("INSERT INTO users (nama, email, username, password, role) VALUES (?, ?, ?, ?, ?)");
+        $stmtInsert->execute([$nama, $email, $username, $hashed_password, $role]);
         
-        // kembali ke form login dengan pesan sukses
+        // Redirect ke login dengan pesan sukses
         header("Location: ../login.php?sukses=register");
         exit;
     } catch (PDOException $e) {
