@@ -4,15 +4,15 @@ require_once 'config/db.php';
 require_once 'auth/middleware.php';
 requireAdmin();
 
-// Ambil data gedung
+// Ambil data gedung untuk dropdown filter
 $stmtGedung = $pdo->query("SELECT * FROM gedung ORDER BY kode ASC");
 $gedung_list = $stmtGedung->fetchAll();
 
-// Ambil data ruangan
+// Ambil data ruangan beserta gedung untuk form dropdown
 $stmtRuangan = $pdo->query("SELECT r.id, r.nama, g.id as gedung_id, g.kode as kode_gedung, g.nama as nama_gedung FROM ruangan r JOIN gedung g ON r.gedung_id = g.id ORDER BY g.kode ASC, r.nama ASC");
 $ruangan_list = $stmtRuangan->fetchAll();
 
-// Ambil data jadwal kuliah
+// Ambil data jadwal kuliah, diurutkan per gedung > ruangan > hari > jam
 $stmtJadwal = $pdo->query("
     SELECT j.*, r.nama as nama_ruangan, g.id as gedung_id, g.kode as kode_gedung, g.nama as nama_gedung
     FROM jadwal_kuliah j
@@ -34,7 +34,7 @@ $stmtJadwal = $pdo->query("
 ");
 $jadwal_list = $stmtJadwal->fetchAll();
 
-// Kelompokkan jadwal Gedung dan Ruangan
+// Kelompokkan jadwal berdasarkan Gedung > Ruangan
 $jadwalPerGedung = [];
 foreach ($jadwal_list as $j) {
     $jadwalPerGedung[$j['gedung_id']]['info'] = [
@@ -165,6 +165,13 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
                             </span>
                             <span style="color:#6B7280;">|</span>
                             <span style="color:var(--text-dark); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($j['mata_kuliah']) ?></span>
+                            <div class="jadwal-row-actions">
+                                <button class="btn btn-outline btn-small" onclick='openModalEdit(<?= json_encode($j) ?>)' style="padding: 0.2rem 0.55rem; font-size: 0.78rem; color: var(--secondary); border-color: var(--secondary);">Edit</button>
+                                <form action="actions/hapus_jadwal.php" method="POST" onsubmit="return confirm('Yakin ingin menghapus jadwal ini?');" style="margin:0;">
+                                    <input type="hidden" name="id" value="<?= $j['id'] ?>">
+                                    <button type="submit" class="btn btn-danger btn-small" style="padding: 0.2rem 0.55rem; font-size: 0.78rem;">Hapus</button>
+                                </form>
+                            </div>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -187,7 +194,7 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
             </div>
 
             <form action="actions/tambah_jadwal.php" method="POST">
-                <!-- Pilih Gedung -->
+                <!-- Langkah 1: Pilih Gedung -->
                 <div class="form-group">
                     <label for="tambah_gedung">Gedung <span style="color:var(--danger)">*</span></label>
                     <select id="tambah_gedung" required>
@@ -198,7 +205,7 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
                     </select>
                 </div>
 
-                <!-- Pilih Ruangan -->
+                <!-- Langkah 2: Pilih Ruangan (difilter berdasarkan gedung) -->
                 <div class="form-group">
                     <label for="ruangan_id">Ruangan <span style="color:var(--danger)">*</span></label>
                     <select id="ruangan_id" name="ruangan_id" required disabled>
@@ -245,9 +252,79 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
         </div>
     </div>
 
+    <!-- ===== MODAL EDIT JADWAL ===== -->
+    <div class="modal-overlay" id="modalEdit">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <span class="modal-title">Edit Jadwal Kuliah</span>
+                <button class="modal-close" onclick="closeModalEdit()" aria-label="Tutup">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <form action="actions/edit_jadwal.php" method="POST">
+                <input type="hidden" id="edit_id" name="id">
+
+                <!-- Langkah 1: Pilih Gedung (Edit) -->
+                <div class="form-group">
+                    <label for="edit_gedung">Gedung <span style="color:var(--danger)">*</span></label>
+                    <select id="edit_gedung" required>
+                        <option value="" disabled>— Pilih gedung —</option>
+                        <?php foreach ($gedung_list as $g): ?>
+                        <option value="<?= $g['id'] ?>"><?= htmlspecialchars($g['kode']) ?> — <?= htmlspecialchars($g['nama']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Langkah 2: Pilih Ruangan (difilter berdasarkan gedung, Edit) -->
+                <div class="form-group">
+                    <label for="edit_ruangan_id">Ruangan <span style="color:var(--danger)">*</span></label>
+                    <select id="edit_ruangan_id" name="ruangan_id" required>
+                        <?php foreach ($ruangan_list as $r): ?>
+                        <option value="<?= $r['id'] ?>" data-gedung="<?= $r['gedung_id'] ?>" style="display:none;">
+                            <?= htmlspecialchars($r['nama']) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_mata_kuliah">Mata Kuliah <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="edit_mata_kuliah" name="mata_kuliah" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit_hari">Hari <span style="color:var(--danger)">*</span></label>
+                    <select id="edit_hari" name="hari" required>
+                        <?php foreach ($hari_enum as $hari): ?>
+                        <option value="<?= $hari ?>"><?= $hari ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="edit_jam_mulai">Jam Mulai <span style="color:var(--danger)">*</span></label>
+                        <input type="time" id="edit_jam_mulai" name="jam_mulai" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="edit_jam_selesai">Jam Selesai <span style="color:var(--danger)">*</span></label>
+                        <input type="time" id="edit_jam_selesai" name="jam_selesai" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" onclick="closeModalEdit()" style="flex:1;">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
+        // ================================================================
         // Fungsi filter ruangan berdasarkan gedung yang dipilih
+        // ================================================================
         function filterRuanganByGedung(gedungSelectId, ruanganSelectId, gedungId) {
             const ruanganSelect = document.getElementById(ruanganSelectId);
             const options = ruanganSelect.querySelectorAll('option[data-gedung]');
@@ -274,7 +351,9 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
             }
         }
 
+        // ================================================================
         // Accordion Gedung toggle
+        // ================================================================
         function toggleAccordion(id) {
             const body    = document.getElementById(id);
             const chevron = document.getElementById('chevron-' + id);
@@ -282,7 +361,9 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
             chevron.classList.toggle('open');
         }
 
+        // ================================================================
         // Modal TAMBAH
+        // ================================================================
         function openModalTambah() {
             // Reset form sebelum dibuka
             document.getElementById('tambah_gedung').value = '';
@@ -301,6 +382,45 @@ $hari_enum = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
         // Event listener: saat gedung dipilih pada form Tambah
         document.getElementById('tambah_gedung').addEventListener('change', function() {
             filterRuanganByGedung('tambah_gedung', 'ruangan_id', this.value);
+        });
+
+        // ================================================================
+        // Modal EDIT
+        // ================================================================
+        function openModalEdit(jadwal) {
+            // Cari gedung_id dari ruangan yang dipilih menggunakan data attribute
+            const editRuanganSelect = document.getElementById('edit_ruangan_id');
+            const matchedOpt = editRuanganSelect.querySelector(`option[value="${jadwal.ruangan_id}"]`);
+            const gedungId = matchedOpt ? matchedOpt.dataset.gedung : null;
+
+            // Set gedung dahulu, lalu filter ruangan
+            document.getElementById('edit_gedung').value = gedungId || '';
+            filterRuanganByGedung('edit_gedung', 'edit_ruangan_id', gedungId);
+
+            // Set nilai ruangan setelah filter
+            editRuanganSelect.value = jadwal.ruangan_id;
+
+            // Set field lainnya
+            document.getElementById('edit_id').value = jadwal.id;
+            document.getElementById('edit_mata_kuliah').value = jadwal.mata_kuliah;
+            document.getElementById('edit_hari').value = jadwal.hari;
+            document.getElementById('edit_jam_mulai').value = jadwal.jam_mulai.substring(0, 5);
+            document.getElementById('edit_jam_selesai').value = jadwal.jam_selesai.substring(0, 5);
+
+            document.getElementById('modalEdit').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModalEdit() {
+            document.getElementById('modalEdit').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('modalEdit').addEventListener('click', function(e) {
+            if (e.target === this) closeModalEdit();
+        });
+
+        // Event listener: saat gedung dipilih pada form Edit
+        document.getElementById('edit_gedung').addEventListener('change', function() {
+            filterRuanganByGedung('edit_gedung', 'edit_ruangan_id', this.value);
         });
     </script>
 </body>
