@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIPERKA - Sistem Peminjaman Ruangan</title>
+    
+    <!-- Tailwind CSS (CDN for single-file implementation) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Lora (Serif) & Inter (Sans-serif) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons or FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'alabaster': '#fbfaf7',
+                        'midnight': '#111c24',
+                        'amber-warm': '#d97706',
+                        'pure-white': '#ffffff',
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'serif': ['Lora', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS for Editorial Neo-Brutalist Styles -->
+    <style>
+        body {
+            background-color: #fbfaf7; /* Warm Alabaster */
+            color: #111c24; /* Midnight Slate */
+        }
+        
+        /* Signature Element: Sharp Editorial Frame */
+        .editorial-card {
+            background-color: #ffffff;
+            border: 1px solid #111c24;
+            border-radius: 6px;
+            box-shadow: 3px 3px 0px #111c24;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .editorial-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #111c24;
+        }
+        
+        .editorial-btn-primary {
+            background-color: #d97706; /* Warm Amber */
+            color: #ffffff;
+            border: 1px solid #111c24;
+            border-radius: 6px;
+            box-shadow: 3px 3px 0px #111c24;
+            font-weight: 600;
+            transition: all 0.1s ease;
+        }
+        
+        .editorial-btn-primary:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0px 0px 0px #111c24;
+        }
+        
+        .editorial-btn-secondary {
+            background-color: #ffffff;
+            color: #111c24;
+            border: 1px solid #111c24;
+            border-radius: 6px;
+            box-shadow: 3px 3px 0px #111c24;
+            font-weight: 600;
+            transition: all 0.1s ease;
+        }
+        
+        .editorial-btn-secondary:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0px 0px 0px #111c24;
+        }
+        /* Status Badges */
+        .status-badge {
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.75rem;
+            border: 1px solid #111c24;
+            border-radius: 4px;
+        }
+        
+        .badge-tersedia {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-terpakai {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        /* Navigation */
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: #111c24;
+            transition: color 0.2s ease;
+            padding-bottom: 2px;
+        }
+        
+        .nav-link:hover {
+            color: #d97706;
+        }
+        
+        .nav-link.active {
+            border-bottom: 3px solid #d97706; /* Sharp amber underline */
+            font-weight: 600;
+        }
+        /* Segmented Control (Tabs) */
+        .segmented-control {
+            display: inline-flex;
+            background-color: #eae8df;
+            border: 1px solid #111c24;
+            border-radius: 6px;
+            padding: 4px;
+        }
+        
+        .segment-btn {
+            padding: 8px 20px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            color: #555;
+        }
+        
+        .segment-btn.active {
+            background-color: #ffffff;
+            color: #111c24;
+            border: 1px solid #111c24;
+            box-shadow: 2px 2px 0px #111c24;
+        }
+        
+        .segment-btn:not(.active):hover {
+            color: #111c24;
+        }
+        /* Utilities */
+        .metadata-icon {
+            color: #111c24;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="antialiased font-sans flex flex-col min-h-screen">
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-50 bg-alabaster border-b border-midnight/10 backdrop-blur-md">
+        <div class="max-w-[1200px] mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Brand -->
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-amber-warm border border-midnight shadow-[2px_2px_0px_#111c24] flex items-center justify-center rounded-sm">
+                    <span class="font-serif font-bold text-white text-lg">S</span>
+                </div>
+                <h1 class="font-serif font-bold text-2xl tracking-tight text-midnight">SIPERKA</h1>
+            </div>
+            <!-- Navigation -->
+            <nav class="hidden md:flex items-center gap-8">
+                <a href="#" class="nav-link active">Beranda</a>
+                <a href="#" class="nav-link">Jadwal</a>
+                <a href="#" class="nav-link">Fasilitas</a>
+                <a href="#" class="nav-link">Bantuan</a>
+            </nav>
+            <!-- User Action -->
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-3">
+                    <span class="text-sm font-medium text-midnight">Dr. A. Wijaya</span>
+                    <div class="w-10 h-10 bg-white border border-midnight shadow-[2px_2px_0px_#111c24] rounded-sm overflow-hidden">
+                        <img src="https://ui-avatars.com/api/?name=A+W&background=fbfaf7&color=111c24&bold=true" alt="User Avatar" class="w-full h-full object-cover" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Main Layout Container -->
+    <main class="flex-grow max-w-[1200px] w-full mx-auto px-6 py-12">
+        
+        <!-- Page Header -->
+        <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div class="max-w-2xl">
+                <h2 class="font-serif text-4xl md:text-5xl font-bold leading-tight mb-4">Eksplorasi & <br/>Reservasi Ruangan.</h2>
+                <p class="text-lg text-midnight/80 font-sans">Akses direktori fasilitas kampus secara real-time. Temukan ruangan yang sesuai dengan kebutuhan akademik dan ekstrakurikuler Anda.</p>
+            </div>
+            
+            <!-- Segmented Control for Buildings -->
+            <div class="segmented-control shrink-0">
+                <button class="segment-btn active">Gedung Utama</button>
+                <button class="segment-btn">Fakultas Teknik</button>
+                <button class="segment-btn">Auditorium</button>
+            </div>
+        </div>
+        <!-- 2-Column Grid for Room Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Card 1: Tersedia -->
+            <div class="editorial-card p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="status-badge badge-tersedia mb-3 inline-block">Tersedia</span>
+                        <h3 class="font-serif text-2xl font-bold">Ruang Seminar 101</h3>
+                        <p class="text-sm text-midnight/70 mt-1">Lantai 1 • Sayap Barat</p>
+                    </div>
+                </div>
+                
+                <div class="h-px w-full bg-midnight/10 mb-5"></div>
+                
+                <!-- Metadata -->
+                <div class="grid grid-cols-2 gap-4 mb-8 flex-grow">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-users metadata-icon"></i>
+                        <span class="text-sm font-medium">Kapasitas 50 orang</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-wifi metadata-icon"></i>
+                        <span class="text-sm font-medium">High-speed Wi-Fi</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-chalkboard-user metadata-icon"></i>
+                        <span class="text-sm font-medium">Proyektor & Smartboard</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-snowflake metadata-icon"></i>
+                        <span class="text-sm font-medium">AC Sentral</span>
+                    </div>
+                </div>
+                
+                <button class="editorial-btn-primary w-full py-3 px-4 text-center">
+                    Pesan Ruangan
+                </button>
+            </div>
+            <!-- Card 2: Terpakai -->
+            <div class="editorial-card p-6 flex flex-col h-full bg-alabaster/50">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="status-badge badge-terpakai mb-3 inline-block">Terpakai (10:00 - 12:30)</span>
+                        <h3 class="font-serif text-2xl font-bold">Auditorium Utama</h3>
+                        <p class="text-sm text-midnight/70 mt-1">Lantai 2 • Sayap Timur</p>
+                    </div>
+                </div>
+                
+                <div class="h-px w-full bg-midnight/10 mb-5"></div>
+                
+                <!-- Metadata -->
+                <div class="grid grid-cols-2 gap-4 mb-8 flex-grow opacity-75">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-users metadata-icon"></i>
+                        <span class="text-sm font-medium">Kapasitas 300 orang</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-microphone metadata-icon"></i>
+                        <span class="text-sm font-medium">Sistem Audio Premium</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-video metadata-icon"></i>
+                        <span class="text-sm font-medium">Dual Proyektor</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-plug metadata-icon"></i>
+                        <span class="text-sm font-medium">Akses Stopkontak</span>
+                    </div>
+                </div>
+                
+                <button class="editorial-btn-secondary w-full py-3 px-4 text-center cursor-not-allowed opacity-70">
+                    Lihat Jadwal Penuh
+                </button>
+            </div>
+            <!-- Card 3: Tersedia -->
+            <div class="editorial-card p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="status-badge badge-tersedia mb-3 inline-block">Tersedia</span>
+                        <h3 class="font-serif text-2xl font-bold">Lab Komputer A</h3>
+                        <p class="text-sm text-midnight/70 mt-1">Lantai 3 • Gedung Utara</p>
+                    </div>
+                </div>
+                
+                <div class="h-px w-full bg-midnight/10 mb-5"></div>
+                
+                <!-- Metadata -->
+                <div class="grid grid-cols-2 gap-4 mb-8 flex-grow">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-desktop metadata-icon"></i>
+                        <span class="text-sm font-medium">35 PC (Core i7)</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-server metadata-icon"></i>
+                        <span class="text-sm font-medium">Server Lokal Akses</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-wifi metadata-icon"></i>
+                        <span class="text-sm font-medium">LAN 1Gbps</span>
+                    </div>
+                </div>
+                
+                <button class="editorial-btn-primary w-full py-3 px-4 text-center">
+                    Pesan Ruangan
+                </button>
+            </div>
+            <!-- Card 4: Tersedia -->
+            <div class="editorial-card p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="status-badge badge-tersedia mb-3 inline-block">Tersedia</span>
+                        <h3 class="font-serif text-2xl font-bold">Ruang Rapat Eksekutif</h3>
+                        <p class="text-sm text-midnight/70 mt-1">Lantai Dasar • Sayap Selatan</p>
+                    </div>
+                </div>
+                
+                <div class="h-px w-full bg-midnight/10 mb-5"></div>
+                
+                <!-- Metadata -->
+                <div class="grid grid-cols-2 gap-4 mb-8 flex-grow">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-users metadata-icon"></i>
+                        <span class="text-sm font-medium">Kapasitas 15 orang</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-tv metadata-icon"></i>
+                        <span class="text-sm font-medium">Smart TV 65"</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-mug-hot metadata-icon"></i>
+                        <span class="text-sm font-medium">Mini Pantry</span>
+                    </div>
+                </div>
+                
+                <button class="editorial-btn-primary w-full py-3 px-4 text-center">
+                    Pesan Ruangan
+                </button>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-midnight/10 py-8 bg-pure-white">
+        <div class="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="font-serif font-bold text-lg text-midnight">SIPERKA.</p>
+            <p class="text-sm text-midnight/60 font-medium">© 2026 Sistem Peminjaman Ruangan Akademik. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

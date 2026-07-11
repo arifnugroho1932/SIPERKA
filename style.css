@@ -485,3 +485,80 @@ main {
         justify-content: center;
     }
 }
+
+/* NEO-BRUTALIST USER UI */
+.editorial-card { background-color: #ffffff; border: 1px solid #111c24; border-radius: 6px; box-shadow: 3px 3px 0px #111c24; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.editorial-card:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #111c24; }
+.editorial-btn-primary { background-color: #d97706; color: #ffffff; border: 1px solid #111c24; border-radius: 6px; box-shadow: 3px 3px 0px #111c24; font-weight: 600; transition: all 0.1s ease; display: inline-block; text-align: center; }
+.editorial-btn-primary:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #111c24; }
+.editorial-btn-secondary { background-color: #ffffff; color: #111c24; border: 1px solid #111c24; border-radius: 6px; box-shadow: 3px 3px 0px #111c24; font-weight: 600; transition: all 0.1s ease; display: inline-block; text-align: center; }
+.editorial-btn-secondary:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0px #111c24; }
+.editorial-btn-danger { background-color: #ffffff; color: #991b1b; border: 1px solid #111c24; border-radius: 6px; box-shadow: 3px 3px 0px #111c24; font-weight: 600; }
+.editorial-input { width: 100%; border: 1px solid #111c24; border-radius: 4px; padding: 0.875rem; font-family: 'Inter', sans-serif; transition: all 0.2s ease; background-color: #ffffff; }
+.editorial-input:focus { outline: none; box-shadow: 2px 2px 0px #d97706; border-color: #d97706; }
+.editorial-label { display: block; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem; color: #111c24; text-align: left; }
+.status-badge { font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.25rem 0.75rem; border: 1px solid #111c24; border-radius: 4px; display: inline-block; }
+.badge-tersedia { background-color: #dcfce7; color: #166534; }
+.badge-terpakai { background-color: #fee2e2; color: #991b1b; }
+.badge-pending { background-color: #fef08a; color: #854d0e; }
+.badge-menunggu { background-color: #fef08a; color: #854d0e; }
+.badge-disetujui { background-color: #dcfce7; color: #166534; }
+.badge-ditolak { background-color: #fee2e2; color: #991b1b; }
+.badge-batal { background-color: #f3f4f6; color: #374151; }
+.nav-link { font-family: 'Inter', sans-serif; font-weight: 500; color: #111c24; transition: color 0.2s ease; padding-bottom: 2px; }
+.nav-link:hover { color: #d97706; }
+.nav-link.active { border-bottom: 3px solid #d97706; font-weight: 600; }
+
+/* FullCalendar Customizations */
+.fc-toolbar-title { font-family: 'Lora', serif; font-weight: 700; color: #111c24; }
+.fc-button-primary { background-color: #111c24 !important; border-color: #111c24 !important; box-shadow: 2px 2px 0px #d97706 !important; border-radius: 4px !important; text-transform: capitalize !important;}
+.fc-button-primary:not(:disabled).fc-button-active, .fc-button-primary:not(:disabled):active { background-color: #d97706 !important; border-color: #111c24 !important; box-shadow: 0px 0px 0px #111c24 !important; }
+.fc-theme-standard th, .fc-theme-standard td, .fc-theme-standard th { border-color: rgba(17, 28, 36, 0.1) !important; }
+.fc-event { border: 1px solid #111c24 !important; border-radius: 2px !important; box-shadow: 1px 1px 0px #111c24 !important; }
+
+/* Segmented Control (Tabs) */
+.segmented-control {
+    display: inline-flex;
+    background-color: #eae8df;
+    border: 1px solid #111c24;
+    border-radius: 6px;
+    padding: 4px;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.segmented-control::-webkit-scrollbar { display: none; }
+
+.segment-btn {
+    padding: 8px 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    color: #555;
+    white-space: nowrap;
+}
+
+.segment-btn.active {
+    background-color: #ffffff;
+    color: #111c24;
+    border: 1px solid #111c24;
+    box-shadow: 2px 2px 0px #111c24;
+}
+
+.segment-btn:not(.active):hover {
+    color: #111c24;
+}
+
+/* Utilities */
+.metadata-icon {
+    color: #111c24;
+    opacity: 0.7;
+}
+
+.building-section { display: none; animation: fadeInUp 0.3s ease; }
+.building-section.active { display: block; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
