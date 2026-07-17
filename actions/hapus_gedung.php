@@ -6,29 +6,26 @@ requireAdmin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'];
+    $kode = trim($_POST['kode']);
+    $nama = trim($_POST['nama']);
+    $deskripsi = trim($_POST['deskripsi']);
 
-    if (empty($id)) {
-        header("Location: ../admin_rooms.php");
+    if (empty($id) || empty($kode) || empty($nama)) {
+        header("Location: ../admin_rooms.php?error=empty_gedung");
         exit;
     }
 
     try {
-        // Cek apakah ada ruangan yang menggunakan gedung ini
-        $stmtCek = $pdo->prepare("SELECT COUNT(*) FROM ruangan WHERE gedung_id = ?");
-        $stmtCek->execute([$id]);
-        $count = $stmtCek->fetchColumn();
-
-        if ($count > 0) {
-            header("Location: ../admin_rooms.php?error=gedung_in_use");
-            exit;
-        }
-
-        $stmt = $pdo->prepare("DELETE FROM gedung WHERE id = ?");
-        $stmt->execute([$id]);
-        header("Location: ../admin_rooms.php?sukses=hapus_gedung");
+        $stmt = $pdo->prepare("UPDATE gedung SET kode = ?, nama = ?, deskripsi = ? WHERE id = ?");
+        $stmt->execute([strtoupper($kode), $nama, $deskripsi, $id]);
+        header("Location: ../admin_rooms.php?sukses=edit_gedung");
         exit;
     } catch (PDOException $e) {
-        header("Location: ../admin_rooms.php?error=system");
+        if ($e->getCode() == 23000) {
+            header("Location: ../admin_rooms.php?error=kode_exists");
+        } else {
+            header("Location: ../admin_rooms.php?error=system");
+        }
         exit;
     }
 }
