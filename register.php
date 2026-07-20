@@ -91,8 +91,8 @@ if (isset($_SESSION['user_id'])) {
                     <input type="text" id="username" name="username" class="editorial-input" placeholder="Masukkan NIM Anda" required>
                 </div>
                 <div>
-                    <label for="nama" class="editorial-label">Email</label>
-                    <input type="text" id="nama" name="nama" class="editorial-input" placeholder="Masukkan Email Anda" required>
+                    <label for="email" class="editorial-label">Email</label>
+                    <input type="email" id="email" name="email" class="editorial-input" placeholder="Masukkan Email Anda" required>
                 </div>
                 <div>
                     <label for="password" class="editorial-label">Password</label>
